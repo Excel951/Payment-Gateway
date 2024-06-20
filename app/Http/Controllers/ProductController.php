@@ -5,16 +5,49 @@ namespace App\Http\Controllers;
 use App\Models\Product;
 use Illuminate\Http\Request;
 
+use function PHPUnit\Framework\isEmpty;
+
 class ProductController extends Controller
 {
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
-        $products = Product::all();
+        try {
+            $products = Product::query();
+    
+            if ($request->has('sort') and $request->input('sort') != 'default') {
+                $sort = $request->input('sort');
+    
+                // split the sort
+                $keywords = preg_split('/-/', $sort);
+    
+                $desc = $keywords[1] == 'Asc' ? false : true;
+    
+                if ($desc) {
+                    $products = $products->orderByDesc(strtolower($keywords[0]));
+                } else {
+                    $products = $products->orderBy(strtolower($keywords[0]));
+                }
+            }
 
-        return view('products.index', compact('products'));
+            if ($request->has('search')) {
+                $keyword = $request->input('search');
+
+                $products = $products
+                    ->where('name', 'like', "%$keyword%")
+                    ->orWhere('description', 'like', "%$keyword%");
+                // dd($products);
+            }
+
+            $products = $products->paginate(10);
+    
+            return view('products.index', compact('products'));
+        } catch (\Throwable $th) {
+            // dd($th);
+            return redirect('products');
+        }
     }
 
     /**
