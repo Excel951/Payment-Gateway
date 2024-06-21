@@ -21,7 +21,8 @@ class ProductSeeder extends Seeder
             ModelsProduct::factory()->create([
                 'name' => $name,
                 'price' => $price,
-                'description' => $description
+                'description' => $description,
+                'quantity' => random_int(1, 10),
             ]);
         }
     }

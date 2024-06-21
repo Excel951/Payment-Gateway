@@ -1,14 +1,14 @@
 <x-app-layout>
     <x-slot name="header">
         <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">
-            {{ __('Products') }}
+            {{ __('Kasir') }}
         </h2>
     </x-slot>
 
     <div class="container mx-auto px-4 mt-4 pb-24">
-        <form action="{{ url('/products') }}" method="get" id="sortForm" class="flex justify-between mb-6">
+        <form action="{{ route('casheer.index') }}" method="get" id="sortForm" class="flex justify-between mb-6">
+            @csrf
             <div class="w-full max-w-sm">
-                @csrf
                 <select name="sort" id="sortProducts"
                     class="block appearance-none w-full bg-white border border-gray-400 hover:border-gray-500 px-4 py-2 pr-8 rounded shadow leading-tight focus:outline-none focus:shadow-outline"
                     onchange="this.form.submit()">
@@ -35,14 +35,17 @@
                 <div
                     class="product-card bg-white rounded-lg shadow-md hover:shadow-lg transition-all duration-300 ease-in-out">
                     <img src="path/to/image.png" class="w-full h-48 object-cover" alt="Product Image">
-                    <div class="p-4">
-                        <h5 class="text-xl font-semibold mb-2">{{ $item->name }}</h5>
+                    <form action="{{route('invoice.create')}}" class="p-4">
+                        @csrf
+                        <h5 class="text-xl font-semibold mb-2 invisible">{{ $item->name }}</h5>
                         <p class="text-gray-600 mb-4">{{ $item->description }}</p>
                         <div class="flex items-center justify-between">
                             <p class="text-green-500 font-bold">{{ $item->price }}</p>
-                            <a href="#" class="text-blue-500 hover:text-blue-600">View Details</a>
+                            <button type="submit" text-blue-500 hover:text-blue-600">Choose product</button>
+                            <input type="hidden" name="name" value="{{ $item->name }}">
+                            <input type="hidden" name="price" value="{{ $item->price }}">
                         </div>
-                    </div>
+                    </form>
                 </div>
             @endforeach
         </div>
