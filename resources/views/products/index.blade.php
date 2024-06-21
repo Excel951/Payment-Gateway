@@ -17,14 +17,18 @@
                             <th></th>
                         </tr>
                         @foreach ($products as $product)
-                            <tr>
-                                <td>{{ $product->name }}</td>
-                                <td>{{ $product->price }}</td>
-                                <td>{{ $product->description }}</td>
-                                <td>
-                                    <button>Add to Cart</button>
-                                </td>
-                            </tr>
+                            <form action="{{ route('products.add-to-cart') }}" method="POST">
+                                @csrf
+                                <input type="hidden" name="product_id" value="{{ $product->id }}">
+                                <tr>
+                                    <td>{{ $product->name }}</td>
+                                    <td>{{ $product->price }}</td>
+                                    <td>{{ $product->description }}</td>
+                                    <td>
+                                        <button type="submit">Add to Cart</button>
+                                    </td>
+                                </tr>
+                            </form>
                         @endforeach
                     </table>
                 </div>
