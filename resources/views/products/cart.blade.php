@@ -30,6 +30,10 @@
                             </tr>
                         @endforeach
                     </table>
+                    <form action="{{ route('products.checkout') }}" method="POST">
+                        @csrf
+                        <button style="background: aqua;" type="submit">Checkout</button>
+                    </form>
                 </div>
             </div>
         </div>
