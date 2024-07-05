@@ -8,13 +8,51 @@ use App\Models\Product;
 use Illuminate\Http\Request;
 use Xendit\Configuration;
 use Xendit\Customer\CustomerApi;
+use Xendit\Invoice\CreateInvoiceRequest;
+use Xendit\Invoice\InvoiceApi;
+use Xendit\XenditSdkException;
 
 class ProductController extends Controller
 {
-    public function index() {
-        $products = Product::all();
+    public function index(Request $request) {
+        // $products = Product::all();
 
-        return view('products.index', compact('products'));
+        // return view('products.index', compact('products'));
+        
+        try {
+            $products = Product::query();
+    
+            if ($request->has('sort') and $request->input('sort') != 'default') {
+                $sort = $request->input('sort');
+    
+                // split the sort
+                $keywords = preg_split('/-/', $sort);
+    
+                $desc = $keywords[1] == 'Asc' ? false : true;
+    
+                if ($desc) {
+                    $products = $products->orderByDesc(strtolower($keywords[0]));
+                } else {
+                    $products = $products->orderBy(strtolower($keywords[0]));
+                }
+            }
+
+            if ($request->has('search')) {
+                $keyword = $request->input('search');
+
+                $products = $products
+                    ->where('name', 'like', "%$keyword%")
+                    ->orWhere('description', 'like', "%$keyword%");
+                // dd($products);
+            }
+
+            $products = $products->paginate(10);
+    
+            return view('products.index', compact('products'));
+        } catch (\Throwable $th) {
+            // dd($th);
+            return redirect('products');
+        }
     }
 
     public function addToCart(Request $request) {
@@ -53,7 +91,7 @@ class ProductController extends Controller
     }
 
     public function checkout(Request $request) {
-        Configuration::setXenditKey(env('XENDIT_API_KEY'));
+        Configuration::setXenditKey(env('XNDT_KY'));
 
         $user = auth()->user();
 
@@ -84,7 +122,9 @@ class ProductController extends Controller
         }
 
         // buat xendit invoice
+        $createXenditInvoice = $this->createXenditInvoice($order->no_invoice, $total, $user);
 
+        return redirect()->away($createXenditInvoice['invoice_url']);
     }
 
     public function createCustomerXendit($user) {
@@ -103,6 +143,31 @@ class ProductController extends Controller
             $user->save();
         } catch (\Xendit\XenditSdkException $e) {
             echo 'Exception when calling CustomerApi->createCustomer: ', $e->getMessage(), PHP_EOL;
+            echo 'Full Error: ', json_encode($e->getFullError()), PHP_EOL;
+        }
+    }
+
+    public function createXenditInvoice($noInvoice, $total, $user) {
+        $apiInstance = new InvoiceApi();
+        $invoiceRequest = new CreateInvoiceRequest([
+            'external_id' => $noInvoice,
+            'amount' => $total,
+            'invoice_duration' => 172800,
+            'description'=>"TEST INVOICE",
+            'currency' => 'IDR',
+            'reminder_time' => 1,
+            'customer' => [
+                'id' => $user->xendit_customer_id,
+                'given_name' => $user->name,
+            ]
+        ]);
+
+        try {
+            $result = $apiInstance->createInvoice($invoiceRequest);
+
+            return $result;
+        } catch (XenditSdkException $e) {
+            echo 'Exception when calling InvoiceApi->createInvoice: ', $e->getMessage(), PHP_EOL;
             echo 'Full Error: ', json_encode($e->getFullError()), PHP_EOL;
         }
     }
